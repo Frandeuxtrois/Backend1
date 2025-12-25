@@ -1,78 +1,13 @@
 const { Router } = require('express');
-const ProductManager = require('../managers/ProductManager');
+const productController = require('../controllers/products.controller.js');
 
 const router = Router();
-// pasamos la ruta al constructor para que encuentre el archivo
-const productManager = new ProductManager('src/data/products.json');
 
-//recibir todos los productos
-router.get('/', async (req, res) => {
-    try {
-        const products = await productManager.getProducts();
-        res.status(200).json(products);
-    } catch (error) {
-        res.status(500).json({ error: "Error del servidor" });
-    }
-});
-
-//recibir por id
-router.get('/:pid', async (req, res) => {
-    try {
-        const product = await productManager.getProductById(req.params.pid);
-        res.status(200).json(product);
-    } catch (error) {
-        res.status(404).json({ error: error.message });
-    }
-});
-
-// Crear producto
-router.post('/', async (req, res) => {
-    try {
-        const newProduct = await productManager.addProduct(req.body);
-
-        // se agrega para sockets
-        const io = req.io;
-        // recibimos lista actualizada de productos
-        const products = await productManager.getProducts();
-        // notificacion cambio lista productso
-        io.emit('server:updateProducts', products);
-
-        res.status(201).json(newProduct);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// actualizar el campo
-router.put('/:pid', async (req, res) => {
-    try {
-        const updatedProduct = await productManager.updateProduct(req.params.pid, req.body);
-
-        // se agrega para sockets
-        const io = req.io;
-        const products = await productManager.getProducts();
-        io.emit('server:updateProducts', products);
-
-        res.status(200).json(updatedProduct);
-    } catch (error) {
-        res.status(404).json({ error: error.message });
-    }
-});
-
-// eliminar x id
-router.delete('/:pid', async (req, res) => {
-    try {
-        await productManager.deleteProduct(req.params.pid);
-
-        // se agrega para sockets
-        const io = req.io;
-        const products = await productManager.getProducts();
-        io.emit('server:updateProducts', products);
-
-        res.status(200).json({ message: 'Producto eliminado.' });
-    } catch (error) {
-        res.status(404).json({ error: error.message });
-    }
-});
+// define ruta y asigna metodo para controlador
+router.get('/', productController.getProducts);
+router.get('/:pid', productController.getProductById);
+router.post('/', productController.addProduct);
+router.put('/:pid', productController.updateProduct);
+router.delete('/:pid', productController.deleteProduct);
 
 module.exports = router;
